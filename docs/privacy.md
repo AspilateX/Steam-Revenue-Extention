@@ -1,6 +1,6 @@
 # Privacy Policy — Steam Revenue Estimate
 
-Last updated: October 7, 2026. Draft for the unpacked extension; a publisher contact and public policy URL must be supplied before store submission.
+Last updated: November 4, 2026. Draft for the unpacked extension; a publisher contact and public policy URL must be supplied before store submission.
 
 ## Data processed and stored
 
@@ -10,7 +10,7 @@ It does not collect Steam account identifiers, credentials, player profiles, rev
 
 ## Requests to Steam
 
-The extension sends the current AppID, fixed US market and review-filter parameters to public endpoints on `store.steampowered.com` to obtain pricing and review totals. Requests omit credentials. Steam receives the request and standard network information such as the IP address and may process it under [Valve's privacy policy](https://store.steampowered.com/privacy_agreement/).
+The extension sends the current AppID and fixed US market to `store.steampowered.com` for pricing, and the current AppID and review-filter parameters to `api.steampowered.com` for review totals. Only the aggregate review summary is used; individual reviews and reviewer details returned by Steam are not stored or used. Requests omit credentials and require no API key. Steam receives the request and standard network information such as the IP address and may process it under [Valve's privacy policy](https://store.steampowered.com/privacy_agreement/).
 
 There is no extension backend or telemetry. The extension does not send its local cache or user settings to the publisher or other analytics services. A manually opened methodology link navigates to the linked external website under normal browser behavior.
 

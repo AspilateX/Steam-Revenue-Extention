@@ -6,10 +6,15 @@ export const COOLDOWN_PREFIX = 'revenue:cooldown:';
 export const TIMEOUT_MS = 8000;
 
 export function endpointUrl(endpoint: Endpoint, appId: number): string {
-  const url = new URL(endpoint === 'metadata' ? '/api/appdetails' : `/appreviews/${appId}`, 'https://store.steampowered.com');
+  const url = endpoint === 'metadata'
+    ? new URL('/api/appdetails', 'https://store.steampowered.com')
+    : new URL('/IUserReviewsService/GetAppReviews/v1/', 'https://api.steampowered.com');
   url.search = endpoint === 'metadata'
     ? new URLSearchParams({ appids: String(appId), cc: 'us', l: 'english' }).toString()
-    : new URLSearchParams({ json: '1', language: 'all', purchase_type: 'steam', review_type: 'all', filter: 'recent', num_per_page: '1', filter_offtopic_activity: '0' }).toString();
+    : new URLSearchParams({ input_json: JSON.stringify({
+      appid: appId, languages: ['all'], purchase_type: 0, review_type: 0,
+      filter: 1, num_per_page: 1, filter_offtopic_activity: false,
+    }) }).toString();
   return url.href;
 }
 
@@ -29,8 +34,10 @@ export function parseMetadata(json: unknown, appId: number): Metadata | undefine
 }
 
 export function parseReviews(json: unknown): number | undefined {
-  if (!isRecord(json) || json.success !== 1 || !isRecord(json.query_summary)) return;
-  return isCount(json.query_summary.total_reviews) ? json.query_summary.total_reviews : undefined;
+  // GetAppReviews uses a response envelope and HTTP status, with no success flag.
+  if (!isRecord(json) || !isRecord(json.response) || !isRecord(json.response.query_summary)) return;
+  const summary = json.response.query_summary;
+  return isCount(summary.total_reviews) ? summary.total_reviews : undefined;
 }
 
 export function retryAfterAt(value: string | null, now: number): number {

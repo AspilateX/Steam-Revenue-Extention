@@ -14,4 +14,4 @@ export const metadata: Metadata = { type: 'game', isFree: false, comingSoon: fal
 export const fact = <T>(value: T, fetchedAt = Date.now()) => ({ value, fetchedAt, source: 'steam-api' as const, stale: false });
 export const game = (reviews = 100, meta: Metadata = metadata): GameFacts => ({ appId: 413150, metadata: fact(meta), reviews: fact(reviews) });
 export const apiMetadata = (overrides: Record<string, unknown> = {}) => ({ '413150': { success: true, data: { steam_appid: 413150, type: 'game', is_free: false, release_date: { coming_soon: false }, price_overview: { currency: 'USD', initial: 2000, final: 1000 }, ...overrides } } });
-export const apiReviews = (total = 100) => ({ success: 1, query_summary: { num_reviews: 1, total_reviews: total } });
+export const apiReviews = (total = 100) => ({ response: { query_summary: { num_reviews: 1, total_reviews: total } } });

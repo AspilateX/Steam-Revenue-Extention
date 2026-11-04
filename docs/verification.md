@@ -1,3 +1,15 @@
+# Verification — 1.0.2
+
+Checked November 4, 2026 on Windows with Node 24.19.0.
+
+- Confirmed the regression: the old `/appreviews/<appid>` endpoint returns HTTP 302 to the Steam homepage, while product metadata still works.
+- Migrated to the documented `IUserReviewsService/GetAppReviews/v1/` endpoint using `input_json`, numeric filter enums, `languages: ["all"]`, Steam purchases, all review types and `filter_offtopic_activity: false`. The parser reads `response.query_summary.total_reviews`; an API key is not required. Existing cache coverage and settings remain compatible.
+- `npm run check` passed: strict TypeScript, 82 unit tests, 12 unpacked-extension browser tests, production build and ZIP. New tests cover the real response envelope, request coverage, malformed/retired payloads, and service-worker HTTP requests followed by a cached reload.
+- `node scripts/live-smoke.mjs` passed all five live cases in a fresh Chromium profile with no network mocks: Stardew Valley in English/Russian, Terraria, Dota 2 (F2P excluded), and Stellaris: Utopia (DLC excluded). All had correct placement and spacing, with no page errors. Stardew Valley used 902,742 reviews and a USD 14.99 list price; Terraria used 1,248,651 reviews and USD 9.99. English details and the Russian page were visually inspected.
+- Manifest V3 remains limited to local storage and the two Steam hosts: Store for product information and API for review totals. ZIP contains only the manifest, bundled background/content scripts and license. Local reports/screenshots remain under ignored `.cache/live-smoke`.
+
+The following records describe earlier releases.
+
 # Verification — 1.0.1
 
 Checked October 7, 2026 with Node 24.19.0 on Windows and Playwright Chromium 153.0.8010.12.

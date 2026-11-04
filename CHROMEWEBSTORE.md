@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — Steam Revenue Estimate
 
-> Last Updated: 2026-10-07. Draft; extension has not been submitted or published.
+> Last Updated: 2026-11-04. Chrome Web Store draft; the extension is distributed through GitHub Releases and has not been submitted to the Web Store.
 
 ## Store Listing
 
@@ -47,7 +47,8 @@ Capture the collapsed block below publisher and expanded details/settings on a r
 | Permission | Type | Justification |
 |---|---|---|
 | storage | permissions | Save the user's estimation assumptions and cache public game price/review totals to reduce repeated requests and support fallback during Steam failures. |
-| https://store.steampowered.com/* | host_permissions | Obtain the currently opened game's public USD price and lifetime review total from Steam and display the revenue estimate on its store page. |
+| https://store.steampowered.com/* | host_permissions | Obtain the currently opened game's public USD price and product information and display the revenue estimate on its store page. |
+| https://api.steampowered.com/* | host_permissions | Obtain the currently opened game's public lifetime review total across all languages from Steam's replacement review service, without an API key or account. |
 
 The static content script runs only on HTTPS Steam app pages in the top frame. No tabs, activeTab, scripting or all-URLs permissions are requested. There is no remote executable code.
 
@@ -99,6 +100,7 @@ The extension processes and stores public website content and estimation setting
 
 | Version | Date | Changes | Status |
 |---|---|---|---|
+| 1.0.2 | 2026-11-04 | Restore estimates after Steam retired the old review endpoint; use the replacement review service with the same lifetime, all-language Steam-purchase coverage. Add access to the Steam API host. | GitHub release; Web Store not submitted |
 | 1.0.1 | 2026-10-07 | Compact min–max ranges alongside full Gross/Net amounts. | GitHub release; Web Store not submitted |
 | 1.0.0 | 2026-10-07 | First GitHub release: full dollar amounts, readable headings/ranges, concise installation guide and release ZIP. | GitHub release; Web Store not submitted |
 | 0.2.1 | 2026-10-07 | Keep the estimate at the bottom of upper game metadata, below publisher and any later-added rows, before tags. | Draft |

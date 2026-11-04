@@ -6,6 +6,6 @@ export default defineConfig({
     name: 'Steam Revenue Estimate',
     description: 'See approximate gross and net revenue on Steam game pages, with transparent assumptions and adjustable estimates.',
     permissions: ['storage'],
-    host_permissions: ['https://store.steampowered.com/*'],
+    host_permissions: ['https://store.steampowered.com/*', 'https://api.steampowered.com/*'],
   },
 });

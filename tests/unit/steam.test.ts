@@ -10,19 +10,40 @@ const loadJson = (name: string) => JSON.parse(readFileSync(`tests/fixtures/${nam
 describe('Steam adapters', () => {
   it('reads real ordinary USD pricing and the summary total', () => {
     expect(parseMetadata(loadJson('appdetails-live'), 413150)).toMatchObject({ type: 'game', priceCents: 1499, isFree: false });
-    expect(parseReviews(loadJson('appreviews-live'))).toBe(897540);
+    expect(parseReviews(loadJson('appreviews-v2-live'))).toBe(902742);
     expect(parseReviews(apiReviews())).toBe(100);
   });
   it('uses fixed market and explicitly defined review coverage', () => {
     const metaUrl = new URL(endpointUrl('metadata', 413150));
     expect(metaUrl.searchParams.get('cc')).toBe('us');
     const url = new URL(endpointUrl('reviews', 413150));
-    expect(Object.fromEntries(url.searchParams)).toMatchObject({ language: 'all', purchase_type: 'steam', filter: 'recent', review_type: 'all', filter_offtopic_activity: '0' });
+    expect(url.origin + url.pathname).toBe('https://api.steampowered.com/IUserReviewsService/GetAppReviews/v1/');
+    expect(JSON.parse(url.searchParams.get('input_json')!)).toEqual({
+      appid: 413150, languages: ['all'], purchase_type: 0, review_type: 0,
+      filter: 1, num_per_page: 1, filter_offtopic_activity: false,
+    });
+    expect(url.searchParams.has('key')).toBe(false);
   });
   it('rejects wrong identities/malformed totals and unconfirmed USD', () => {
     expect(parseMetadata(apiMetadata(), 123)).toBeUndefined();
-    expect(parseReviews({ success: 1, query_summary: { total_reviews: -1 } })).toBeUndefined();
+    expect(parseReviews(apiReviews(-1))).toBeUndefined();
     expect(parseMetadata(apiMetadata({ price_overview: { currency: 'CAD', initial: 2000 } }), 413150)?.priceCents).toBeUndefined();
+  });
+  it('reads lifetime totals rather than page size or total_matching, including zero', () => {
+    expect(parseReviews({ response: { query_summary: { num_reviews: 1, total_reviews: 100 }, total_matching: 7 } })).toBe(100);
+    expect(parseReviews(apiReviews(0))).toBe(0);
+  });
+  it.each([null, {}, { response: {} }, { response: { query_summary: {} } },
+    { response: { query_summary: { total_reviews: '100' } } },
+    { response: { query_summary: { total_reviews: 1.5 } } },
+    { response: { query_summary: { total_reviews: Number.MAX_SAFE_INTEGER + 1 } } },
+    { response: { total_matching: 100 } },
+  ])('refuses missing or malformed review summaries: %j', json => {
+    expect(parseReviews(json)).toBeUndefined();
+  });
+  it('rejects the retired endpoint payload and redirects returning HTML', () => {
+    expect(parseReviews(loadJson('appreviews-live'))).toBeUndefined();
+    expect(parseReviews('<!doctype html><title>Welcome to Steam</title>')).toBeUndefined();
   });
   it('does not treat a free promotion as F2P', () => {
     expect(parseMetadata(apiMetadata({ price_overview: { currency: 'USD', initial: 2000, final: 0 } }), 413150)).toMatchObject({ isFree: false, priceCents: 2000 });

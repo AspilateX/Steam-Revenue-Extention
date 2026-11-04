@@ -64,6 +64,6 @@ Gross здесь — потенциальная сумма по полной ц�
 
 - [Grey Alien Games: метод Boxleiter](https://greyaliengames.com/blog/how-to-estimate-how-many-sales-a-steam-game-has-made/).
 - [Steam Revenue Calculator: эталон финансовых поправок и множителей](https://steam-revenue-calculator.com/).
-- [Steamworks: отзывы](https://partner.steamgames.com/doc/store/getreviews?language=english).
+- [Steamworks: отзывы и переход на GetAppReviews](https://partner.steamgames.com/doc/webapi/IUserReviewsService?l=english). С версии 1.0.2 используется новый сервис отзывов; охват и формула сохранены.
 
 Поправки к доходу и пороговые множители — вариант реализации сайта-эталона, а не исходная формула Boxleiter.

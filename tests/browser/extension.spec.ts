@@ -20,11 +20,12 @@ test.beforeEach(async ({}, testInfo) => {
   meta['413150'].data.price_overview.initial = 2000;
   meta['413150'].data.price_overview.final = 1000;
   await worker.evaluate(({ meta }) => {
-    const state = globalThis as typeof globalThis & { requests: string[] };
+    const state = globalThis as typeof globalThis & { requests: string[]; nativeFetch: typeof fetch };
+    state.nativeFetch = globalThis.fetch;
     state.requests = [];
     globalThis.fetch = async input => {
       const url = String(input); state.requests.push(url);
-      return Response.json(url.includes('/api/appdetails') ? meta : { success: 1, query_summary: { total_reviews: 100 } });
+      return Response.json(url.includes('/api/appdetails') ? meta : { response: { query_summary: { total_reviews: 100 } } });
     };
   }, { meta });
   await context.route('https://store.steampowered.com/**', async route => {
@@ -33,6 +34,34 @@ test.beforeEach(async ({}, testInfo) => {
   });
 });
 test.afterEach(async () => { await context?.close(); });
+
+test('loads the new Steam Reviews response through the extension service worker', async () => {
+  const reviews = await readFile('tests/fixtures/appreviews-v2-live.json', 'utf8');
+  const meta = await readFile('tests/fixtures/appdetails-live.json', 'utf8');
+  await context.route('https://store.steampowered.com/api/appdetails?**', route => route.fulfill({ contentType: 'application/json', body: meta }));
+  const reviewRequests: URL[] = [];
+  await context.route('https://api.steampowered.com/**', async route => {
+    reviewRequests.push(new URL(route.request().url()));
+    await route.fulfill({ contentType: 'application/json', body: reviews });
+  });
+  await worker.evaluate(() => {
+    globalThis.fetch = (globalThis as typeof globalThis & { nativeFetch: typeof fetch }).nativeFetch;
+  });
+  const page = await context.newPage();
+  await page.goto('https://store.steampowered.com/app/413150/Game/');
+  const host = page.locator('#steam-revenue-estimate');
+  await expect(host).toHaveAttribute('data-state', 'estimated');
+  await host.locator('summary').click();
+  await expect(host.locator('.details > dl')).toContainText('902,742');
+  expect(reviewRequests).toHaveLength(1);
+  expect(reviewRequests[0]!.pathname).toBe('/IUserReviewsService/GetAppReviews/v1/');
+  expect(JSON.parse(reviewRequests[0]!.searchParams.get('input_json')!)).toMatchObject({
+    appid: 413150, languages: ['all'], purchase_type: 0, review_type: 0, filter_offtopic_activity: false,
+  });
+  await page.reload();
+  await expect(host).toHaveAttribute('data-state', 'estimated');
+  expect(reviewRequests).toHaveLength(1);
+});
 
 test('renders one block after publisher and saves/reset assumptions without fetching again', async () => {
   const page = await context.newPage();
@@ -104,7 +133,7 @@ test('full billion-dollar amounts remain readable in narrow English and Russian 
   await worker.evaluate(() => {
     globalThis.fetch = async input => Response.json(String(input).includes('appdetails') ? {
       '413150': { success: true, data: { steam_appid: 413150, type: 'game', is_free: false, release_date: { coming_soon: false }, price_overview: { currency: 'USD', initial: 9999 } } },
-    } : { success: 1, query_summary: { total_reviews: 1000000 } });
+    } : { response: { query_summary: { total_reviews: 1000000 } } });
   });
   for (const language of ['english', 'russian']) {
     html = await readFile(`tests/fixtures/steam-${language}.html`, 'utf8');
@@ -142,7 +171,7 @@ test('shows unavailable for non-USD API and ambiguous page currency', async () =
   await worker.evaluate(() => {
     globalThis.fetch = async input => Response.json(String(input).includes('appdetails') ? {
       '413150': { success: true, data: { steam_appid: 413150, type: 'game', is_free: false, release_date: { coming_soon: false }, price_overview: { currency: 'CAD', initial: 2000 } } },
-    } : { success: 1, query_summary: { total_reviews: 100 } });
+    } : { response: { query_summary: { total_reviews: 100 } } });
   });
   const page = await context.newPage(); await page.goto('https://store.steampowered.com/app/413150/Game/');
   const host = page.locator('#steam-revenue-estimate');
@@ -160,7 +189,7 @@ test('discards a response after navigation to another AppID', async () => {
         const id = Number(url.searchParams.get('appids'));
         return Response.json({ [id]: { success: true, data: { steam_appid: id, type: id === 123 ? 'dlc' : 'game', is_free: false, release_date: { coming_soon: false }, price_overview: { currency: 'USD', initial: 2000 } } } });
       }
-      return Response.json({ success: 1, query_summary: { total_reviews: 100 } });
+      return Response.json({ response: { query_summary: { total_reviews: 100 } } });
     };
   });
   const page = await context.newPage(); await page.goto('https://store.steampowered.com/app/413150/Game/');
@@ -183,7 +212,7 @@ test('rejects F2P, DLC, demo, unreleased games and zero reviews', async () => {
       await chrome.storage.local.clear();
       globalThis.fetch = async input => Response.json(String(input).includes('appdetails') ? {
         '413150': { success: true, data: { steam_appid: 413150, type: config.type, is_free: config.isFree, release_date: { coming_soon: config.comingSoon }, price_overview: { currency: 'USD', initial: 2000 } } },
-      } : { success: 1, query_summary: { total_reviews: config.reviews } });
+      } : { response: { query_summary: { total_reviews: config.reviews } } });
     }, option);
     await page.goto('https://store.steampowered.com/app/413150/Game/');
     await expect(page.locator('#steam-revenue-estimate')).toHaveAttribute('data-state', 'unsupported');
